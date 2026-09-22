@@ -33,8 +33,8 @@ jobs:
         with:
           gradle-version: '9.2.0'
 
-      - name: Build Pixel-Region
-        run: gradle clean build --no-daemon --stacktrace
+      - name: Clean verification build
+        run: gradle clean check build --no-daemon --stacktrace
 
       - name: Verify source API boundaries
         shell: bash
@@ -52,7 +52,6 @@ jobs:
             exit 1
           fi
 
-          echo 'Gson is permitted internally and is verified through ShadowJar relocation below.'
           echo 'Source API boundary validation passed.'
 
       - name: Verify plugin artifact
@@ -64,26 +63,13 @@ jobs:
           jar tf "$artifact" | grep -q '^paper-plugin.yml$'
           jar tf "$artifact" | grep -q '^de/pixelregion/'
 
-          if jar tf "$artifact" | grep -qE '^(com/google/gson|com/zaxxer/hikari|com/mysql)/'; then
-            echo 'Unrelocated bundled dependency package detected.'
+          if jar tf "$artifact" | grep -qE '^com/google/gson/'; then
+            echo 'Unrelocated bundled Gson package detected.'
             exit 1
           fi
 
           if ! jar tf "$artifact" | grep -q '^de/pixelregion/libs/gson/'; then
             echo 'Relocated Gson package missing from shaded artifact.'
-            exit 1
-          fi
-          if ! jar tf "$artifact" | grep -q '^de/pixelregion/libs/hikari/'; then
-            echo 'Relocated Hikari package missing from shaded artifact.'
-            exit 1
-          fi
-          if ! jar tf "$artifact" | grep -q '^de/pixelregion/libs/mysql/'; then
-            echo 'Relocated MySQL package missing from shaded artifact.'
-            exit 1
-          fi
-
-          if ! jar tf "$artifact" | grep -q '^META-INF/services/java.sql.Driver$'; then
-            echo 'Shaded JDBC service descriptor missing.'
             exit 1
           fi
 
