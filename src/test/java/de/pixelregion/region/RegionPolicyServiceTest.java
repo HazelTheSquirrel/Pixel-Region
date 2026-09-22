@@ -94,7 +94,9 @@ class RegionPolicyServiceTest {
     }
 
     private static RegionManager managerWithDefaults(Map<RegionFlag, FlagState> defaults, Region... regions) {
-        final RegionManager manager = new RegionManager(new MemoryStorage(), new EnumMap<>(defaults));
+        final EnumMap<RegionFlag, FlagState> configured = new EnumMap<>(RegionFlag.class);
+        configured.putAll(defaults);
+        final RegionManager manager = new RegionManager(new MemoryStorage(), configured);
         for (Region region : regions) {
             manager.add(region);
         }
