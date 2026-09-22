@@ -3,6 +3,7 @@ package de.pixelregion.region;
 public enum RegionFlag {
     BUILD,
     USE,
+    CONTAINER_USE,
     PVP,
     MOB_DAMAGE,
     ENTITY_DAMAGE,
