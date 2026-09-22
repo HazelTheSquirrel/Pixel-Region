@@ -8,33 +8,41 @@ import de.pixelregion.region.RegionManager;
 import de.pixelregion.region.RegionPoint;
 import de.pixelregion.region.RegionSession;
 import de.pixelregion.region.RegionSessionManager;
+import de.pixelregion.region.RegionValidator;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class PixelRegionCommand implements io.papermc.paper.command.brigadier.BasicCommand {
-
     private final JavaPlugin plugin;
     private final RegionManager manager;
     private final RegionSessionManager sessions;
+    private final RegionMessages messages;
 
     public PixelRegionCommand(
-            final JavaPlugin plugin,
-            final RegionManager manager,
-            final RegionSessionManager sessions
+            JavaPlugin plugin,
+            RegionManager manager,
+            RegionSessionManager sessions,
+            RegionMessages messages
     ) {
         this.plugin = plugin;
         this.manager = manager;
         this.sessions = sessions;
+        this.messages = messages;
     }
 
     @Override
-    public void execute(final CommandSourceStack source, final String[] args) {
+    public void execute(CommandSourceStack source, String[] args) {
         final CommandSender sender = source.getSender();
 
         if (args.length == 0) {
@@ -49,9 +57,11 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
             case "point" -> point(sender, args);
             case "finish" -> finish(sender);
             case "cancel" -> cancel(sender);
+            case "edit" -> edit(sender, args);
             case "delete" -> delete(sender, args);
             case "flag" -> flag(sender, args);
             case "member" -> member(sender, args);
+            case "debug" -> debug(sender, args);
             case "reload" -> reload(sender);
             case "save" -> save(sender);
             default -> help(sender);
@@ -59,7 +69,7 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
     }
 
     @Override
-    public boolean canUse(final CommandSender sender) {
+    public boolean canUse(CommandSender sender) {
         return sender.hasPermission("pixelregion.command");
     }
 
@@ -68,32 +78,42 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
         return "pixelregion.command";
     }
 
-    private void help(final CommandSender sender) {
-        RegionMessages.send(sender, "/pixelregion commands:");
-        RegionMessages.send(sender, "create <name> Start a polygon.");
-        RegionMessages.send(sender, "point [x] [z] Add a polygon point.");
-        RegionMessages.send(sender, "finish Create the region.");
-        RegionMessages.send(sender, "cancel Cancel the current polygon.");
-        RegionMessages.send(sender, "list List regions.");
-        RegionMessages.send(sender, "info [name] Show region information.");
-        RegionMessages.send(sender, "flag <name> <flag> <allow|deny>");
-        RegionMessages.send(sender, "member <add|remove> <name> <player>");
-        RegionMessages.send(sender, "delete <name>");
+    private void help(CommandSender sender) {
+        messages.send(sender, "/pixelregion commands:");
+        messages.send(sender, "create <name> Start a polygon.");
+        messages.send(sender, "point [x] [z] Add a polygon point.");
+        messages.send(sender, "finish Create the region.");
+        messages.send(sender, "cancel Cancel the current polygon.");
+        messages.send(sender, "list List regions.");
+        messages.send(sender, "info [name] Show region information.");
+        messages.send(sender, "edit <name> <priority|miny|maxy|point>");
+        messages.send(sender, "flag <name> <flag> <allow|deny>");
+        messages.send(sender, "member <add|remove> <name> <player>");
+        messages.send(sender, "delete <name>");
+        messages.send(sender, "debug [flag]");
+        messages.send(sender, "reload");
+        messages.send(sender, "save");
     }
 
-    private void list(final CommandSender sender) {
-        if (manager.all().isEmpty()) {
-            RegionMessages.send(sender, "No regions exist.");
+    private void list(CommandSender sender) {
+        if (!hasPermission(sender, "pixelregion.command.list")) {
             return;
         }
-        RegionMessages.send(sender, "Regions:");
-        for (final Region region : manager.all()) {
-            RegionMessages.send(sender, "- " + region.name()
-                    + " (priority " + region.priority() + ")");
+        if (manager.all().isEmpty()) {
+            messages.send(sender, "No regions exist.");
+            return;
+        }
+        messages.send(sender, "Regions:");
+        for (Region region : manager.all()) {
+            messages.send(sender, "- " + region.name() + " (priority " + region.priority() + ")");
         }
     }
 
-    private void info(final CommandSender sender, final String[] args) {
+    private void info(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.info")) {
+            return;
+        }
+
         Region region = null;
         if (args.length >= 2) {
             region = manager.byName(args[1]).orElse(null);
@@ -102,33 +122,46 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
         }
 
         if (region == null) {
-            RegionMessages.send(sender, "No region found.");
+            messages.send(sender, "No region found.");
             return;
         }
 
-        RegionMessages.send(sender, "" + region.name() + "");
-        RegionMessages.send(sender, "World: " + region.worldId());
-        RegionMessages.send(sender, "Points: " + region.points().size());
-        RegionMessages.send(sender, "Y: " + region.minY() + " - " + region.maxY());
-        RegionMessages.send(sender, "Priority: " + region.priority());
-        RegionMessages.send(sender, "Owner: " + (region.owner() == null ? "none" : region.owner()));
+        messages.send(sender, region.name());
+        messages.send(sender, "World: " + region.worldId());
+        messages.send(sender, "Points: " + region.points().size());
+        messages.send(sender, "Y: " + region.minY() + " - " + region.maxY());
+        messages.send(sender, "Priority: " + region.priority());
+        messages.send(sender, "Owner: " + (region.owner() == null ? "none" : region.owner()));
+        messages.send(sender, "Members: " + region.members().size());
+        messages.send(sender, "Flags: " + region.flags());
     }
 
-    private void create(final CommandSender sender, final String[] args) {
+    private void create(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.create")) {
+            return;
+        }
         if (!(sender instanceof Player player)) {
-            RegionMessages.send(sender, "This command requires a player.");
+            messages.send(sender, "This command requires a player.");
             return;
         }
         if (args.length < 2 || args[1].isBlank()) {
-            RegionMessages.send(sender, "Usage: /pixelregion create <name>");
+            messages.send(sender, "Usage: /pixelregion create <name>");
             return;
         }
+
+        try {
+            RegionValidator.validateName(args[1]);
+        } catch (IllegalArgumentException exception) {
+            messages.send(sender, exception.getMessage());
+            return;
+        }
+
         if (sessions.contains(player.getUniqueId())) {
-            RegionMessages.send(sender, "You already have an active polygon.");
+            messages.send(sender, "You already have an active polygon.");
             return;
         }
         if (manager.byName(args[1]).isPresent()) {
-            RegionMessages.send(sender, "A region with that name already exists.");
+            messages.send(sender, "A region with that name already exists.");
             return;
         }
 
@@ -140,19 +173,21 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
                 world.getMinHeight(),
                 world.getMaxHeight()
         ));
-
-        RegionMessages.send(sender, "Polygon started. Use /pixelregion point to add points.");
+        messages.send(sender, "Polygon started. Use /pixelregion point to add points.");
     }
 
-    private void point(final CommandSender sender, final String[] args) {
+    private void point(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.create")) {
+            return;
+        }
         if (!(sender instanceof Player player)) {
-            RegionMessages.send(sender, "This command requires a player.");
+            messages.send(sender, "This command requires a player.");
             return;
         }
 
         final RegionSession session = sessions.get(player.getUniqueId());
         if (session == null) {
-            RegionMessages.send(sender, "No active polygon. Use /pixelregion create <name>.");
+            messages.send(sender, "No active polygon. Use /pixelregion create <name>.");
             return;
         }
 
@@ -162,27 +197,30 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
             x = args.length >= 3 ? Double.parseDouble(args[1]) : player.getLocation().getX();
             z = args.length >= 3 ? Double.parseDouble(args[2]) : player.getLocation().getZ();
         } catch (NumberFormatException exception) {
-            RegionMessages.send(sender, "Coordinates must be numbers.");
+            messages.send(sender, "Coordinates must be numbers.");
             return;
         }
 
         session.addPoint(new RegionPoint(x, z));
-        RegionMessages.send(sender, "Point added. Total: " + session.points().size());
+        messages.send(sender, "Point added. Total: " + session.points().size());
     }
 
-    private void finish(final CommandSender sender) {
+    private void finish(CommandSender sender) {
+        if (!hasPermission(sender, "pixelregion.command.create")) {
+            return;
+        }
         if (!(sender instanceof Player player)) {
-            RegionMessages.send(sender, "This command requires a player.");
+            messages.send(sender, "This command requires a player.");
             return;
         }
 
         final RegionSession session = sessions.get(player.getUniqueId());
         if (session == null) {
-            RegionMessages.send(sender, "No active polygon.");
+            messages.send(sender, "No active polygon.");
             return;
         }
         if (session.points().size() < 3) {
-            RegionMessages.send(sender, "A polygon requires at least three points.");
+            messages.send(sender, "A polygon requires at least three points.");
             return;
         }
 
@@ -196,52 +234,182 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
                     session.points(),
                     0,
                     player.getUniqueId(),
-                    java.util.Set.of(),
-                    java.util.Map.of()
+                    Set.of(),
+                    Map.of()
             );
             manager.add(region);
             manager.save();
             sessions.remove(player.getUniqueId());
-            RegionMessages.send(sender, "Region created: " + region.name() + "");
+            messages.send(sender, "Region created: " + region.name());
         } catch (IllegalArgumentException exception) {
-            RegionMessages.send(sender, "Region rejected: " + exception.getMessage());
+            messages.send(sender, "Region rejected: " + exception.getMessage());
         }
     }
 
-    private void cancel(final CommandSender sender) {
+    private void cancel(CommandSender sender) {
+        if (!hasPermission(sender, "pixelregion.command.create")) {
+            return;
+        }
         if (!(sender instanceof Player player)) {
-            RegionMessages.send(sender, "This command requires a player.");
+            messages.send(sender, "This command requires a player.");
             return;
         }
         if (sessions.remove(player.getUniqueId()) != null) {
-            RegionMessages.send(sender, "Polygon cancelled.");
+            messages.send(sender, "Polygon cancelled.");
         } else {
-            RegionMessages.send(sender, "No active polygon.");
+            messages.send(sender, "No active polygon.");
         }
     }
 
-    private void delete(final CommandSender sender, final String[] args) {
-        if (args.length < 2) {
-            RegionMessages.send(sender, "Usage: /pixelregion delete <name>");
+    private void edit(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.edit")) {
             return;
         }
-        if (!manager.remove(args[1])) {
-            RegionMessages.send(sender, "Region not found.");
-            return;
-        }
-        manager.save();
-        RegionMessages.send(sender, "Region deleted.");
-    }
-
-    private void flag(final CommandSender sender, final String[] args) {
-        if (args.length < 4) {
-            RegionMessages.send(sender, "Usage: /pixelregion flag <name> <flag> <allow|deny>");
+        if (args.length < 3) {
+            messages.send(sender, "Usage: /pixelregion edit <name> <priority|miny|maxy|point ...>");
             return;
         }
 
         final Region region = manager.byName(args[1]).orElse(null);
         if (region == null) {
-            RegionMessages.send(sender, "Region not found.");
+            messages.send(sender, "Region not found.");
+            return;
+        }
+        if (!controls(sender, region)) {
+            messages.send(sender, "You do not control this region.");
+            return;
+        }
+
+        try {
+            final String operation = args[2].toLowerCase(Locale.ROOT);
+            switch (operation) {
+                case "priority" -> editPriority(sender, region, args);
+                case "miny" -> editY(sender, region, args, true);
+                case "maxy" -> editY(sender, region, args, false);
+                case "point" -> editPoint(sender, region, args);
+                default -> messages.send(sender, "Unknown edit operation.");
+            }
+        } catch (NumberFormatException exception) {
+            messages.send(sender, "Numeric values are required.");
+        } catch (IllegalArgumentException exception) {
+            messages.send(sender, "Edit rejected: " + exception.getMessage());
+        }
+    }
+
+    private void editPriority(CommandSender sender, Region region, String[] args) {
+        if (args.length < 4) {
+            messages.send(sender, "Usage: /pixelregion edit <name> priority <value>");
+            return;
+        }
+        final Region updated = rebuild(region, region.points(), region.minY(), region.maxY(), Integer.parseInt(args[3]));
+        manager.replace(updated);
+        manager.save();
+        messages.send(sender, "Priority updated.");
+    }
+
+    private void editY(CommandSender sender, Region region, String[] args, boolean min) {
+        if (args.length < 4) {
+            messages.send(sender, "Usage: /pixelregion edit <name> " + (min ? "miny" : "maxy") + " <value>");
+            return;
+        }
+        final int value = Integer.parseInt(args[3]);
+        final int minY = min ? value : region.minY();
+        final int maxY = min ? region.maxY() : value;
+        final Region updated = rebuild(region, region.points(), minY, maxY, region.priority());
+        manager.replace(updated);
+        manager.save();
+        messages.send(sender, (min ? "Min-Y" : "Max-Y") + " updated.");
+    }
+
+    private void editPoint(CommandSender sender, Region region, String[] args) {
+        if (args.length < 4) {
+            messages.send(sender, "Usage: /pixelregion edit <name> point <add|set|remove> ...");
+            return;
+        }
+
+        final List<RegionPoint> points = new ArrayList<>(region.points());
+        final String operation = args[3].toLowerCase(Locale.ROOT);
+
+        switch (operation) {
+            case "add" -> {
+                if (args.length < 6) {
+                    messages.send(sender, "Usage: ... point add <x> <z>");
+                    return;
+                }
+                points.add(new RegionPoint(Double.parseDouble(args[4]), Double.parseDouble(args[5])));
+            }
+            case "set" -> {
+                if (args.length < 7) {
+                    messages.send(sender, "Usage: ... point set <index> <x> <z>");
+                    return;
+                }
+                final int index = parsePointIndex(args[4], points.size());
+                points.set(index, new RegionPoint(Double.parseDouble(args[5]), Double.parseDouble(args[6])));
+            }
+            case "remove" -> {
+                if (args.length < 5) {
+                    messages.send(sender, "Usage: ... point remove <index>");
+                    return;
+                }
+                if (points.size() <= 3) {
+                    messages.send(sender, "A polygon must keep at least three points.");
+                    return;
+                }
+                points.remove(parsePointIndex(args[4], points.size()));
+            }
+            default -> {
+                messages.send(sender, "Use add, set or remove.");
+                return;
+            }
+        }
+
+        final Region updated = rebuild(region, points, region.minY(), region.maxY(), region.priority());
+        manager.replace(updated);
+        manager.save();
+        messages.send(sender, "Polygon points updated.");
+    }
+
+    private void delete(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.delete")) {
+            return;
+        }
+        if (args.length < 2) {
+            messages.send(sender, "Usage: /pixelregion delete <name>");
+            return;
+        }
+        final Region region = manager.byName(args[1]).orElse(null);
+        if (region == null) {
+            messages.send(sender, "Region not found.");
+            return;
+        }
+        if (!controls(sender, region)) {
+            messages.send(sender, "You do not control this region.");
+            return;
+        }
+        if (!manager.remove(region.name())) {
+            messages.send(sender, "Region could not be deleted.");
+            return;
+        }
+        manager.save();
+        messages.send(sender, "Region deleted.");
+    }
+
+    private void flag(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.flag")) {
+            return;
+        }
+        if (args.length < 4) {
+            messages.send(sender, "Usage: /pixelregion flag <name> <flag> <allow|deny>");
+            return;
+        }
+
+        final Region region = manager.byName(args[1]).orElse(null);
+        if (region == null) {
+            messages.send(sender, "Region not found.");
+            return;
+        }
+        if (!controls(sender, region)) {
+            messages.send(sender, "You do not control this region.");
             return;
         }
 
@@ -251,59 +419,148 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
             flag = RegionFlag.valueOf(args[2].toUpperCase(Locale.ROOT));
             state = FlagState.valueOf(args[3].toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            RegionMessages.send(sender, "Unknown flag or state.");
+            messages.send(sender, "Unknown flag or state.");
             return;
         }
 
         region.setFlag(flag, state);
+        manager.markDirty();
         manager.save();
-        RegionMessages.send(sender, "Flag updated.");
+        messages.send(sender, "Flag updated.");
     }
 
-    private void member(final CommandSender sender, final String[] args) {
+    private void member(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.member")) {
+            return;
+        }
         if (args.length < 4) {
-            RegionMessages.send(sender, "Usage: /pixelregion member <add|remove> <name> <player>");
+            messages.send(sender, "Usage: /pixelregion member <add|remove> <name> <player>");
             return;
         }
 
         final Region region = manager.byName(args[2]).orElse(null);
         if (region == null) {
-            RegionMessages.send(sender, "Region not found.");
+            messages.send(sender, "Region not found.");
+            return;
+        }
+        if (!controls(sender, region)) {
+            messages.send(sender, "You do not control this region.");
             return;
         }
 
         final Player target = plugin.getServer().getPlayerExact(args[3]);
         if (target == null) {
-            RegionMessages.send(sender, "Player must be online.");
-            return;
-        }
-
-        if (!(sender instanceof Player player) || (!region.hasAccess(player.getUniqueId())
-                && !sender.hasPermission("pixelregion.admin"))) {
-            RegionMessages.send(sender, "You do not control this region.");
+            messages.send(sender, "Player must be online.");
             return;
         }
 
         if (args[1].equalsIgnoreCase("add")) {
             region.addMember(target.getUniqueId());
-            RegionMessages.send(sender, "Member added.");
         } else if (args[1].equalsIgnoreCase("remove")) {
             region.removeMember(target.getUniqueId());
-            RegionMessages.send(sender, "Member removed.");
         } else {
-            RegionMessages.send(sender, "Use add or remove.");
+            messages.send(sender, "Use add or remove.");
+            return;
+        }
+
+        manager.markDirty();
+        manager.save();
+        messages.send(sender, "Member updated.");
+    }
+
+    private void debug(CommandSender sender, String[] args) {
+        if (!hasPermission(sender, "pixelregion.command.debug")) {
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            messages.send(sender, "This command requires a player.");
+            return;
+        }
+
+        final RegionFlag flag;
+        try {
+            flag = args.length >= 2
+                    ? RegionFlag.valueOf(args[1].toUpperCase(Locale.ROOT))
+                    : RegionFlag.USE;
+        } catch (IllegalArgumentException exception) {
+            messages.send(sender, "Unknown flag.");
+            return;
+        }
+
+        final List<Region> applicable = manager.applicableRegions(player.getLocation());
+        messages.send(sender, "Location: " + player.getLocation().getBlockX() + ", "
+                + player.getLocation().getBlockY() + ", " + player.getLocation().getBlockZ());
+        messages.send(sender, "Flag: " + flag);
+        messages.send(sender, "Applicable regions: " + applicable.size());
+
+        for (Region region : applicable) {
+            messages.send(sender, "- " + region.name()
+                    + " priority=" + region.priority()
+                    + " explicit=" + region.flag(flag)
+                    + " owner=" + region.owner()
+                    + " member=" + region.hasAccess(player.getUniqueId()));
+        }
+
+        final boolean allowed = manager.allows(player.getLocation(), flag, player.getUniqueId(),
+                player.hasPermission("pixelregion.bypass"));
+        messages.send(sender, "Final policy: " + (allowed ? "ALLOW" : "DENY"));
+    }
+
+    private void reload(CommandSender sender) {
+        if (!hasPermission(sender, "pixelregion.command.reload")) {
+            return;
+        }
+        manager.load();
+        messages.send(sender, "Regions reloaded.");
+    }
+
+    private void save(CommandSender sender) {
+        if (!hasPermission(sender, "pixelregion.command.save")) {
             return;
         }
         manager.save();
+        messages.send(sender, "Regions saved.");
     }
 
-    private void reload(final CommandSender sender) {
-        manager.load();
-        RegionMessages.send(sender, "Regions reloaded.");
+    private boolean controls(CommandSender sender, Region region) {
+        return sender.hasPermission("pixelregion.admin")
+                || sender instanceof Player player && region.hasAccess(player.getUniqueId());
     }
 
-    private void save(final CommandSender sender) {
-        manager.save();
-        RegionMessages.send(sender, "Regions saved.");
+    private boolean hasPermission(CommandSender sender, String permission) {
+        if (!sender.hasPermission(permission)) {
+            messages.send(sender, "You do not have permission to use this command.");
+            return false;
+        }
+        return true;
+    }
+
+    private static int parsePointIndex(String value, int size) {
+        final int index = Integer.parseInt(value);
+        if (index < 0 || index >= size) {
+            throw new IllegalArgumentException("Point index out of range.");
+        }
+        return index;
+    }
+
+    private static Region rebuild(
+            Region source,
+            List<RegionPoint> points,
+            int minY,
+            int maxY,
+            int priority
+    ) {
+        return new Region(
+                source.id(),
+                source.name(),
+                source.worldId(),
+                minY,
+                maxY,
+                points,
+                priority,
+                source.owner(),
+                source.members(),
+                new EnumMap<>(source.flags())
+        );
     }
 }
