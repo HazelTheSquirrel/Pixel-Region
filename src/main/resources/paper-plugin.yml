@@ -1,0 +1,5 @@
+name: Pixel-Region
+version: '1.0.0'
+main: de.pixelregion.PixelRegionPlugin
+description: Standalone polygon-based region protection for Paper 26.2.
+api-version: '26.2'
