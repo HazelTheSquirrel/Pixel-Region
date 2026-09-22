@@ -1,0 +1,16 @@
+storage:
+  file: regions.json
+
+protection:
+  default-build: allow
+  default-use: allow
+  default-pvp: allow
+  default-mob-damage: allow
+  default-explosion: allow
+  default-fire-spread: allow
+  default-fluid-flow: allow
+
+messages:
+  denied: "<red>You are not allowed to do that here."
+  enter: "<gray>You entered <gold>{region}</gold>."
+  exit: "<gray>You left <gold>{region}</gold>."
