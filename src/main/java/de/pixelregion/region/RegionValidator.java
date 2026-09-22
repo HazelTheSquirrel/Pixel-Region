@@ -10,7 +10,6 @@ public final class RegionValidator {
         if (region.minY() >= region.maxY()) throw new IllegalArgumentException("minY must be smaller than maxY.");
         if (region.points().size() < 3) throw new IllegalArgumentException("A region polygon requires at least three points.");
         region.geometry();
-        if (region.members().contains(null)) throw new IllegalArgumentException("Region members may not contain null.");
     }
 
     public static void validateName(String name) {
