@@ -106,15 +106,15 @@ tasks.register('verifyPixelRegionShadedDependencies') {
         if (serviceText.any { it == 'com.mysql.cj.jdbc.Driver' }) {
             throw new GradleException('JDBC service descriptor still exposes the pre-relocation MySQL driver class')
         }
-        if (!serviceText.any { it == 'de.pixelrpg.rpg.libs.mysql.cj.jdbc.Driver' }) {
+        if (!serviceText.any { it == 'de.pixelregion.libs.mysql.cj.jdbc.Driver' }) {
             throw new GradleException('Relocated MySQL JDBC driver is missing from META-INF/services/java.sql.Driver')
         }
     }
 }
 
 tasks.check {
-    dependsOn tasks.named('verifyPixelRpgSourceBoundaries')
-    dependsOn tasks.named('verifyPixelRpgShadedDependencies')
+    dependsOn tasks.named('verifyPixelRegionSourceBoundaries')
+    dependsOn tasks.named('verifyPixelRegionShadedDependencies')
 }
 
 tasks.jar {
