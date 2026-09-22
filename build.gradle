@@ -4,7 +4,7 @@ plugins {
     id 'com.gradleup.shadow' version '9.6.1'
 }
 
-group = 'de.pixelrpg'
+group = 'de.pixelregion'
 version = '1.0.0'
 
 repositories {
@@ -35,7 +35,7 @@ tasks.withType(JavaCompile).configureEach {
     options.compilerArgs.addAll(['-Xlint:all'])
 }
 
-tasks.register('verifyPixelRpgSourceBoundaries') {
+tasks.register('verifyPixelRegionSourceBoundaries') {
     group = 'verification'
     description = 'Rejects legacy Bukkit/NMS APIs and static live-server references.'
     doLast {
@@ -61,15 +61,15 @@ tasks.register('verifyPixelRpgSourceBoundaries') {
 
 tasks.shadowJar {
     archiveFileName = "Pixel-Region.jar"
-    relocate 'com.google.gson', 'de.pixelrpg.rpg.libs.gson'
-    relocate 'com.zaxxer.hikari', 'de.pixelrpg.rpg.libs.hikari'
-    relocate 'com.mysql', 'de.pixelrpg.rpg.libs.mysql'
+    relocate 'com.google.gson', 'de.pixelregion.libs.gson'
+    relocate 'com.zaxxer.hikari', 'de.pixelregion.libs.hikari'
+    relocate 'com.mysql', 'de.pixelregion.libs.mysql'
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     mergeServiceFiles()
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
 }
 
-tasks.register('verifyPixelRpgShadedDependencies') {
+tasks.register('verifyPixelRegionShadedDependencies') {
     group = 'verification'
     description = 'Verifies that bundled third-party runtime classes are actually relocated.'
     dependsOn tasks.named('shadowJar')

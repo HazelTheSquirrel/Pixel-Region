@@ -56,16 +56,17 @@ Statusregeln:
 - [x] Build- und Shadow-Verifikation
 
 ### Kritische bzw. relevante offene Punkte
-- [ ] Geometry wird bei Queries unnötig wiederholt erzeugt.
-- [ ] RegionManager verbindet Verwaltung, Query und Policy.
-- [ ] Es gibt keine ApplicableRegions-Abstraktion.
-- [ ] Owner/Member-Policy ist nicht sauber von Regiondaten getrennt.
-- [ ] findAll prüft grundsätzlich alle Regionen.
-- [ ] Kein Spatial-/Chunk-Index.
-- [ ] Movement betrachtet primär die jeweils höchste Region statt vollständiger Regionsmengen.
-- [ ] Teleport-/Portal-Transitions sind nicht zentralisiert.
+- [ ] **Neues Architekturmodell aus PixelRPG übernommen:** RegionGeometry-Cache, zentrale Policy, Chunk-Index, vollständige Transition-Mengen und robuste Storage-Grundlage sind implementiert; Build-/Test-Verifikation steht noch aus.
+- [x] Geometry wird nicht mehr pro Query neu erzeugt; Region hält vorbereitete Geometry/Bounds.
+- [x] RegionPolicyService trennt die Policy-Auswertung von Regiondaten und Query.
+- [x] `RegionManager.applicableRegions(...)` liefert die vollständige priorisierte Regionsmenge.
+- [x] Owner/Member-Entscheidungen liegen zentral im RegionPolicyService.
+- [x] Query arbeitet über einen World+Chunk-Spatial-Index und prüft danach Y/Bounds/Polygon.
+- [x] World+Chunk-Index ist bei Load/Add/Remove/Replace aufgebaut bzw. aktualisiert.
+- [x] Movement/Transition vergleicht vollständige Region-Mengen statt nur der Top-Region.
+- [x] PlayerTeleportEvent läuft über die gemeinsame PlayerMoveEvent-Transition-Kette; die aktuelle Paper-26.2-Vererbung wurde geprüft.
 - [ ] MOB_SPAWN ist vorhanden, aber noch nicht vollständig geschützt.
-- [ ] Config-Defaults sind noch nicht die tatsächliche Fallback-Policy.
+- [x] Config-Defaults werden beim Start als zentrale Fallback-Policy geladen.
 - [ ] Config-Messages sind noch nicht vollständig zentral verwendet.
 - [ ] Container-Schutz fehlt.
 - [ ] Tests für Geometry und Policy fehlen bzw. sind unzureichend.
@@ -74,7 +75,7 @@ Statusregeln:
 - [ ] Name-Validation ist zu schwach.
 - [ ] Permissions sind zu grob.
 - [ ] Debug-/Diagnosefunktion fehlt.
-- [ ] Build enthält noch alte de.pixelrpg-Namensreste.
+- [x] Build-Group, Verification-Tasks und Shadow-Relocations sind auf `de.pixelregion` umgestellt.
 - [ ] CI enthält nicht mehr benötigte Branchfilter.
 
 ## 3. Zielumfang
@@ -125,20 +126,20 @@ Empfohlene Verantwortlichkeiten:
 ## 5. Verbindlicher Buildplan
 
 ### Phase 1 — Core stabilisieren
-- [ ] Geometry Cache: RegionGeometry und Bounds wiederverwenden.
+- [x] Geometry Cache: RegionGeometry und Bounds wiederverwenden.
 - [ ] Geometry bei Polygonänderungen korrekt erneuern.
 - [ ] Tests für inside/outside/boundary/invalid.
-- [ ] RegionValidator einführen.
+- [x] RegionValidator einführen.
 - [ ] UUID, Name, World, Y, Polygon, Priority, Flags, Owner und Members validieren.
 - [ ] Name auf sinnvolles Format und case-insensitive Eindeutigkeit bringen.
 Abschluss: Build und Geometry-/Validator-Tests erfolgreich.
 
 ### Phase 2 — Query und Policy
-- [ ] ApplicableRegions als zentrale Overlap-Abfrage.
+- [x] ApplicableRegions als zentrale Overlap-Abfrage.
 - [ ] World, Y, Bounds und Polygon in der Query.
 - [ ] Ergebnis nach Priority sortiert.
-- [ ] RegionManager nicht mehr als zentrale Policy-Schicht verwenden.
-- [ ] RegionPolicyEvaluator einführen.
+- [x] RegionManager ist nicht mehr die primäre Policy-Schicht; Listener delegieren an RegionPolicyService.
+- [x] RegionPolicyService einführen.
 - [ ] höchste explizite Flag-Entscheidung gewinnt.
 - [ ] unset fällt auf niedrigere Regionen.
 - [ ] kein Treffer fällt auf konfigurierten Default zurück.
@@ -146,7 +147,7 @@ Abschluss: Build und Geometry-/Validator-Tests erfolgreich.
 Abschluss: Single-, Overlap-, Priority-, Fallback-, Owner- und Member-Tests erfolgreich.
 
 ### Phase 3 — Performance
-- [ ] Spatial-/Chunk-Index nach World + Chunk.
+- [x] Spatial-/Chunk-Index nach World + Chunk.
 - [ ] Add, Remove, Edit und Reload aktualisieren den Index.
 - [ ] Regionen über Chunkgrenzen korrekt behandeln.
 - [ ] erst Kandidaten, dann Bounds, dann Polygon prüfen.
@@ -164,11 +165,11 @@ Abschluss: korrekte Query-Ergebnisse und Performance-Test mit vielen Regionen.
 Abschluss: alle tatsächlich angebotenen Flags funktionieren vollständig.
 
 ### Phase 5 — Movement
-- [ ] RegionTransitionService.
-- [ ] entered/exited/retained aus vollständigen Regionsmengen berechnen.
+- [x] RegionTransitionService.
+- [x] entered/exited/retained aus vollständigen Regionsmengen berechnen.
 - [ ] ENTRY/EXIT nicht nur über Top-Region bestimmen.
-- [ ] normale Teleports berücksichtigen.
-- [ ] World-Wechsel berücksichtigen.
+- [x] normale Teleports werden über PlayerMoveEvent/PlayerTeleportEvent berücksichtigt.
+- [x] World-Wechsel werden durch World UUID in der Query berücksichtigt.
 - [ ] gleiche Region vor/nach Teleport darf keinen falschen Transition-Event auslösen.
 Abschluss: Movement-, Overlap-, Y- und Teleport-Tests erfolgreich.
 
@@ -187,11 +188,11 @@ Abschluss: vollständiger Create/Edit-Flow ohne Datenverlust.
 
 ### Phase 7 — Storage
 - [ ] RegionStorage-Abstraktion.
-- [ ] JsonRegionStorage.
-- [ ] schemaVersion im Dateiformat.
+- [x] JsonRegionStorage-Grundlage bleibt erhalten und wurde um ein versioniertes Dokumentformat erweitert.
+- [x] schemaVersion im Dateiformat.
 - [ ] unbekannte Versionen sauber behandeln.
-- [ ] Backup-Datei.
-- [ ] sichere temporäre Speicherung und Replace-Strategie.
+- [x] Backup-Datei.
+- [x] sichere temporäre Speicherung und Replace-Strategie.
 - [ ] Dirty-State.
 - [ ] Save bei wichtigen Mutationen und Shutdown.
 - [ ] Async I/O nur mit immutable/serialisierten Daten.
@@ -337,12 +338,13 @@ Dokumentation: abgeschlossen
 Offene Muss-Punkte: 0
 
 ## 10. Fortschrittsprotokoll
+- PixelRPG-Referenz: Region, RegionManager, RegionPolicyService, RegionTransitionService und Repository wurden als Architekturvorlage geprüft. Es wurden nur für Pixel-Region benötigte Bestandteile übernommen; Pixel-Region bleibt vollständig eigenständig.
 - Initial Audit: [x]
-- Phase 1 Core: [ ]
-- Phase 2 Query/Policy: [ ]
-- Phase 3 Performance: [ ]
+- Phase 1 Core: [-]
+- Phase 2 Query/Policy: [-]
+- Phase 3 Performance: [-]
 - Phase 4 Protection: [ ]
-- Phase 5 Movement: [ ]
+- Phase 5 Movement: [-]
 - Phase 6 Editor: [ ]
 - Phase 7 Storage: [ ]
 - Phase 8 Permissions: [ ]

@@ -5,59 +5,60 @@ import de.pixelregion.listener.RegionBlockListener;
 import de.pixelregion.listener.RegionCombatListener;
 import de.pixelregion.listener.RegionEnvironmentListener;
 import de.pixelregion.listener.RegionMovementListener;
+import de.pixelregion.region.FlagState;
+import de.pixelregion.region.RegionFlag;
 import de.pixelregion.region.RegionManager;
+import de.pixelregion.region.RegionPolicyService;
 import de.pixelregion.region.RegionRepository;
 import de.pixelregion.region.RegionSessionManager;
+import de.pixelregion.region.RegionTransitionService;
 import org.bukkit.plugin.java.JavaPlugin;
+import java.util.EnumMap;
 
 public final class PixelRegionPlugin extends JavaPlugin {
-
     private RegionManager regionManager;
+    private RegionPolicyService regionPolicy;
+    private RegionTransitionService regionTransitions;
     private RegionSessionManager sessionManager;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-
         final RegionRepository repository = new RegionRepository(this);
-        this.regionManager = new RegionManager(repository);
-        this.regionManager.load();
+        regionManager = new RegionManager(repository, defaultFlags());
+        regionManager.load();
+        regionPolicy = new RegionPolicyService(regionManager);
+        regionTransitions = new RegionTransitionService(regionManager, regionPolicy);
+        sessionManager = new RegionSessionManager();
 
-        this.sessionManager = new RegionSessionManager();
-
-        getServer().getPluginManager().registerEvents(
-                new RegionBlockListener(regionManager),
-                this
-        );
-        getServer().getPluginManager().registerEvents(
-                new RegionCombatListener(regionManager),
-                this
-        );
-        getServer().getPluginManager().registerEvents(
-                new RegionEnvironmentListener(regionManager),
-                this
-        );
-        getServer().getPluginManager().registerEvents(
-                new RegionMovementListener(regionManager),
-                this
-        );
-
+        getServer().getPluginManager().registerEvents(new RegionBlockListener(regionPolicy), this);
+        getServer().getPluginManager().registerEvents(new RegionCombatListener(regionPolicy), this);
+        getServer().getPluginManager().registerEvents(new RegionEnvironmentListener(regionPolicy), this);
+        getServer().getPluginManager().registerEvents(new RegionMovementListener(regionTransitions), this);
         getServer().getPluginManager().registerEvents(sessionManager, this);
 
-        final PixelRegionCommand command = new PixelRegionCommand(this, regionManager, sessionManager);
-        registerCommand("pixelregion", command);
-
+        registerCommand("pixelregion", new PixelRegionCommand(this, regionManager, sessionManager));
         getLogger().info("Pixel-Region enabled with " + regionManager.size() + " regions.");
     }
 
     @Override
     public void onDisable() {
-        if (regionManager != null) {
-            regionManager.save();
-        }
+        if (regionManager != null) regionManager.save();
+        if (regionTransitions != null) regionTransitions.clearAll();
     }
 
-    public RegionManager regionManager() {
-        return regionManager;
+    public RegionManager regionManager() { return regionManager; }
+
+    private EnumMap<RegionFlag, FlagState> defaultFlags() {
+        final EnumMap<RegionFlag, FlagState> flags = new EnumMap<>(RegionFlag.class);
+        for (RegionFlag flag : RegionFlag.values()) {
+            flags.put(flag, configState("default-" + flag.name().toLowerCase().replace('_', '-')));
+        }
+        return flags;
+    }
+
+    private FlagState configState(String path) {
+        return "deny".equalsIgnoreCase(getConfig().getString("protection." + path, "allow"))
+                ? FlagState.DENY : FlagState.ALLOW;
     }
 }
