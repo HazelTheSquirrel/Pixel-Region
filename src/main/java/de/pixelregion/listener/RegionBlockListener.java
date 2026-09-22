@@ -11,7 +11,12 @@ import org.bukkit.event.player.PlayerInteractEvent;
 
 public final class RegionBlockListener implements Listener {
     private final RegionPolicyService policy;
-    public RegionBlockListener(RegionPolicyService policy) { this.policy = policy; }
+    private final RegionMessages messages;
+
+    public RegionBlockListener(RegionPolicyService policy, RegionMessages messages) {
+        this.policy = policy;
+        this.messages = messages;
+    }
 
     // Prevents block breaking when the central BUILD policy denies it.
     @EventHandler(ignoreCancelled = true)
@@ -19,28 +24,30 @@ public final class RegionBlockListener implements Listener {
         if (!policy.allows(event.getBlock().getLocation(), RegionFlag.BUILD, event.getPlayer().getUniqueId(),
                 event.getPlayer().hasPermission("pixelregion.bypass"))) {
             event.setCancelled(true);
-            RegionMessages.send(event.getPlayer(), "You cannot break blocks in this region.");
+            messages.denied(event.getPlayer());
         }
     }
 
     // Prevents block placement when the central BUILD policy denies it.
     @EventHandler(ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (!policy.allows(event.getBlock().getLocation(), RegionFlag.BUILD, event.getPlayer().getUniqueId(),
+        if (!policy.allows(event.getBlockPlaced().getLocation(), RegionFlag.BUILD, event.getPlayer().getUniqueId(),
                 event.getPlayer().hasPermission("pixelregion.bypass"))) {
             event.setCancelled(true);
-            RegionMessages.send(event.getPlayer(), "You cannot place blocks in this region.");
+            messages.denied(event.getPlayer());
         }
     }
 
     // Prevents block and item interaction when the central USE policy denies it.
     @EventHandler(ignoreCancelled = true)
     public void onInteract(PlayerInteractEvent event) {
-        if (event.getClickedBlock() == null) return;
+        if (event.getClickedBlock() == null) {
+            return;
+        }
         if (!policy.allows(event.getClickedBlock().getLocation(), RegionFlag.USE, event.getPlayer().getUniqueId(),
                 event.getPlayer().hasPermission("pixelregion.bypass"))) {
             event.setCancelled(true);
-            RegionMessages.send(event.getPlayer(), "You cannot use that here.");
+            messages.denied(event.getPlayer());
         }
     }
 }
