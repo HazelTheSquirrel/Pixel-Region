@@ -29,6 +29,23 @@ class RegionManagerQueryTest {
         assertEquals(List.of(), manager.applicableRegions(new RegionQuery(WORLD, 16, 50, 16)));
     }
 
+
+    @Test
+    void manyRegionsRemainQueryableThroughSpatialIndex() {
+        final RegionManager manager = manager();
+        for (int i = 0; i < 1000; i++) {
+            final double offset = i * 32.0;
+            manager.add(region("r" + i, 0, square(offset)));
+        }
+
+        for (int i = 0; i < 1000; i++) {
+            final double offset = i * 32.0;
+            assertEquals("r" + i, manager.applicableRegions(
+                    new RegionQuery(WORLD, offset + 5, 5, offset + 5)
+            ).getFirst().name());
+        }
+    }
+
     @Test
     void caseInsensitiveNamesAndReplacementStayUnique() {
         final Region first = region("Alpha", 0, square(0));
