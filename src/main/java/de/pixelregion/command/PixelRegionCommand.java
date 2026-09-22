@@ -1,5 +1,6 @@
 package de.pixelregion.command;
 
+import de.pixelregion.RegionMessages;
 import de.pixelregion.region.FlagState;
 import de.pixelregion.region.Region;
 import de.pixelregion.region.RegionFlag;
@@ -9,7 +10,6 @@ import de.pixelregion.region.RegionSession;
 import de.pixelregion.region.RegionSessionManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.World;
-import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -69,26 +69,26 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
     }
 
     private void help(final CommandSender sender) {
-        sender.sendRichMessage("<gold>/pixelregion</gold> <gray>commands:</gray>");
-        sender.sendRichMessage("<yellow>create <name></yellow> <gray>Start a polygon.</gray>");
-        sender.sendRichMessage("<yellow>point [x] [z]</yellow> <gray>Add a polygon point.</gray>");
-        sender.sendRichMessage("<yellow>finish</yellow> <gray>Create the region.</gray>");
-        sender.sendRichMessage("<yellow>cancel</yellow> <gray>Cancel the current polygon.</gray>");
-        sender.sendRichMessage("<yellow>list</yellow> <gray>List regions.</gray>");
-        sender.sendRichMessage("<yellow>info [name]</yellow> <gray>Show region information.</gray>");
-        sender.sendRichMessage("<yellow>flag <name> <flag> <allow|deny></yellow>");
-        sender.sendRichMessage("<yellow>member <add|remove> <name> <player></yellow>");
-        sender.sendRichMessage("<yellow>delete <name></yellow>");
+        RegionMessages.send(sender, "<gold>/pixelregion</gold> <gray>commands:</gray>");
+        RegionMessages.send(sender, "<yellow>create <name></yellow> <gray>Start a polygon.</gray>");
+        RegionMessages.send(sender, "<yellow>point [x] [z]</yellow> <gray>Add a polygon point.</gray>");
+        RegionMessages.send(sender, "<yellow>finish</yellow> <gray>Create the region.</gray>");
+        RegionMessages.send(sender, "<yellow>cancel</yellow> <gray>Cancel the current polygon.</gray>");
+        RegionMessages.send(sender, "<yellow>list</yellow> <gray>List regions.</gray>");
+        RegionMessages.send(sender, "<yellow>info [name]</yellow> <gray>Show region information.</gray>");
+        RegionMessages.send(sender, "<yellow>flag <name> <flag> <allow|deny></yellow>");
+        RegionMessages.send(sender, "<yellow>member <add|remove> <name> <player></yellow>");
+        RegionMessages.send(sender, "<yellow>delete <name></yellow>");
     }
 
     private void list(final CommandSender sender) {
         if (manager.all().isEmpty()) {
-            sender.sendRichMessage("<gray>No regions exist.</gray>");
+            RegionMessages.send(sender, "<gray>No regions exist.</gray>");
             return;
         }
-        sender.sendRichMessage("<gold>Regions:</gold>");
+        RegionMessages.send(sender, "<gold>Regions:</gold>");
         for (final Region region : manager.all()) {
-            sender.sendRichMessage("<gray>- <white>" + region.name()
+            RegionMessages.send(sender, "<gray>- <white>" + region.name()
                     + "</white> <dark_gray>(priority " + region.priority() + ")</dark_gray>");
         }
     }
@@ -102,33 +102,33 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
         }
 
         if (region == null) {
-            sender.sendRichMessage("<red>No region found.</red>");
+            RegionMessages.send(sender, "<red>No region found.</red>");
             return;
         }
 
-        sender.sendRichMessage("<gold>" + region.name() + "</gold>");
-        sender.sendRichMessage("<gray>World:</gray> " + region.worldId());
-        sender.sendRichMessage("<gray>Points:</gray> " + region.points().size());
-        sender.sendRichMessage("<gray>Y:</gray> " + region.minY() + " - " + region.maxY());
-        sender.sendRichMessage("<gray>Priority:</gray> " + region.priority());
-        sender.sendRichMessage("<gray>Owner:</gray> " + (region.owner() == null ? "none" : region.owner()));
+        RegionMessages.send(sender, "<gold>" + region.name() + "</gold>");
+        RegionMessages.send(sender, "<gray>World:</gray> " + region.worldId());
+        RegionMessages.send(sender, "<gray>Points:</gray> " + region.points().size());
+        RegionMessages.send(sender, "<gray>Y:</gray> " + region.minY() + " - " + region.maxY());
+        RegionMessages.send(sender, "<gray>Priority:</gray> " + region.priority());
+        RegionMessages.send(sender, "<gray>Owner:</gray> " + (region.owner() == null ? "none" : region.owner()));
     }
 
     private void create(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendRichMessage("<red>This command requires a player.</red>");
+            RegionMessages.send(sender, "<red>This command requires a player.</red>");
             return;
         }
         if (args.length < 2 || args[1].isBlank()) {
-            sender.sendRichMessage("<red>Usage: /pixelregion create <name></red>");
+            RegionMessages.send(sender, "<red>Usage: /pixelregion create <name></red>");
             return;
         }
         if (sessions.contains(player.getUniqueId())) {
-            sender.sendRichMessage("<red>You already have an active polygon.</red>");
+            RegionMessages.send(sender, "<red>You already have an active polygon.</red>");
             return;
         }
         if (manager.byName(args[1]).isPresent()) {
-            sender.sendRichMessage("<red>A region with that name already exists.</red>");
+            RegionMessages.send(sender, "<red>A region with that name already exists.</red>");
             return;
         }
 
@@ -141,18 +141,18 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
                 world.getMaxHeight()
         ));
 
-        sender.sendRichMessage("<green>Polygon started.</green> Use <yellow>/pixelregion point</yellow> to add points.");
+        RegionMessages.send(sender, "<green>Polygon started.</green> Use <yellow>/pixelregion point</yellow> to add points.");
     }
 
     private void point(final CommandSender sender, final String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendRichMessage("<red>This command requires a player.</red>");
+            RegionMessages.send(sender, "<red>This command requires a player.</red>");
             return;
         }
 
         final RegionSession session = sessions.get(player.getUniqueId());
         if (session == null) {
-            sender.sendRichMessage("<red>No active polygon. Use /pixelregion create <name>.</red>");
+            RegionMessages.send(sender, "<red>No active polygon. Use /pixelregion create <name>.</red>");
             return;
         }
 
@@ -162,27 +162,27 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
             x = args.length >= 3 ? Double.parseDouble(args[1]) : player.getLocation().getX();
             z = args.length >= 3 ? Double.parseDouble(args[2]) : player.getLocation().getZ();
         } catch (NumberFormatException exception) {
-            sender.sendRichMessage("<red>Coordinates must be numbers.</red>");
+            RegionMessages.send(sender, "<red>Coordinates must be numbers.</red>");
             return;
         }
 
         session.addPoint(new RegionPoint(x, z));
-        sender.sendRichMessage("<green>Point added.</green> <gray>Total:</gray> " + session.points().size());
+        RegionMessages.send(sender, "<green>Point added.</green> <gray>Total:</gray> " + session.points().size());
     }
 
     private void finish(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendRichMessage("<red>This command requires a player.</red>");
+            RegionMessages.send(sender, "<red>This command requires a player.</red>");
             return;
         }
 
         final RegionSession session = sessions.get(player.getUniqueId());
         if (session == null) {
-            sender.sendRichMessage("<red>No active polygon.</red>");
+            RegionMessages.send(sender, "<red>No active polygon.</red>");
             return;
         }
         if (session.points().size() < 3) {
-            sender.sendRichMessage("<red>A polygon requires at least three points.</red>");
+            RegionMessages.send(sender, "<red>A polygon requires at least three points.</red>");
             return;
         }
 
@@ -202,46 +202,46 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
             manager.add(region);
             manager.save();
             sessions.remove(player.getUniqueId());
-            sender.sendRichMessage("<green>Region created:</green> <gold>" + region.name() + "</gold>");
+            RegionMessages.send(sender, "<green>Region created:</green> <gold>" + region.name() + "</gold>");
         } catch (IllegalArgumentException exception) {
-            sender.sendRichMessage("<red>Region rejected:</red> " + exception.getMessage());
+            RegionMessages.send(sender, "<red>Region rejected:</red> " + exception.getMessage());
         }
     }
 
     private void cancel(final CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendRichMessage("<red>This command requires a player.</red>");
+            RegionMessages.send(sender, "<red>This command requires a player.</red>");
             return;
         }
         if (sessions.remove(player.getUniqueId()) != null) {
-            sender.sendRichMessage("<gray>Polygon cancelled.</gray>");
+            RegionMessages.send(sender, "<gray>Polygon cancelled.</gray>");
         } else {
-            sender.sendRichMessage("<red>No active polygon.</red>");
+            RegionMessages.send(sender, "<red>No active polygon.</red>");
         }
     }
 
     private void delete(final CommandSender sender, final String[] args) {
         if (args.length < 2) {
-            sender.sendRichMessage("<red>Usage: /pixelregion delete <name></red>");
+            RegionMessages.send(sender, "<red>Usage: /pixelregion delete <name></red>");
             return;
         }
         if (!manager.remove(args[1])) {
-            sender.sendRichMessage("<red>Region not found.</red>");
+            RegionMessages.send(sender, "<red>Region not found.</red>");
             return;
         }
         manager.save();
-        sender.sendRichMessage("<green>Region deleted.</green>");
+        RegionMessages.send(sender, "<green>Region deleted.</green>");
     }
 
     private void flag(final CommandSender sender, final String[] args) {
         if (args.length < 4) {
-            sender.sendRichMessage("<red>Usage: /pixelregion flag <name> <flag> <allow|deny></red>");
+            RegionMessages.send(sender, "<red>Usage: /pixelregion flag <name> <flag> <allow|deny></red>");
             return;
         }
 
         final Region region = manager.byName(args[1]).orElse(null);
         if (region == null) {
-            sender.sendRichMessage("<red>Region not found.</red>");
+            RegionMessages.send(sender, "<red>Region not found.</red>");
             return;
         }
 
@@ -251,47 +251,47 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
             flag = RegionFlag.valueOf(args[2].toUpperCase(Locale.ROOT));
             state = FlagState.valueOf(args[3].toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
-            sender.sendRichMessage("<red>Unknown flag or state.</red>");
+            RegionMessages.send(sender, "<red>Unknown flag or state.</red>");
             return;
         }
 
         region.setFlag(flag, state);
         manager.save();
-        sender.sendRichMessage("<green>Flag updated.</green>");
+        RegionMessages.send(sender, "<green>Flag updated.</green>");
     }
 
     private void member(final CommandSender sender, final String[] args) {
         if (args.length < 4) {
-            sender.sendRichMessage("<red>Usage: /pixelregion member <add|remove> <name> <player></red>");
+            RegionMessages.send(sender, "<red>Usage: /pixelregion member <add|remove> <name> <player></red>");
             return;
         }
 
         final Region region = manager.byName(args[2]).orElse(null);
         if (region == null) {
-            sender.sendRichMessage("<red>Region not found.</red>");
+            RegionMessages.send(sender, "<red>Region not found.</red>");
             return;
         }
 
         final Player target = plugin.getServer().getPlayerExact(args[3]);
         if (target == null) {
-            sender.sendRichMessage("<red>Player must be online.</red>");
+            RegionMessages.send(sender, "<red>Player must be online.</red>");
             return;
         }
 
         if (!(sender instanceof Player player) || (!region.hasAccess(player.getUniqueId())
                 && !sender.hasPermission("pixelregion.admin"))) {
-            sender.sendRichMessage("<red>You do not control this region.</red>");
+            RegionMessages.send(sender, "<red>You do not control this region.</red>");
             return;
         }
 
         if (args[1].equalsIgnoreCase("add")) {
             region.addMember(target.getUniqueId());
-            sender.sendRichMessage("<green>Member added.</green>");
+            RegionMessages.send(sender, "<green>Member added.</green>");
         } else if (args[1].equalsIgnoreCase("remove")) {
             region.removeMember(target.getUniqueId());
-            sender.sendRichMessage("<green>Member removed.</green>");
+            RegionMessages.send(sender, "<green>Member removed.</green>");
         } else {
-            sender.sendRichMessage("<red>Use add or remove.</red>");
+            RegionMessages.send(sender, "<red>Use add or remove.</red>");
             return;
         }
         manager.save();
@@ -299,11 +299,11 @@ public final class PixelRegionCommand implements org.bukkit.command.BasicCommand
 
     private void reload(final CommandSender sender) {
         manager.load();
-        sender.sendRichMessage("<green>Regions reloaded.</green>");
+        RegionMessages.send(sender, "<green>Regions reloaded.</green>");
     }
 
     private void save(final CommandSender sender) {
         manager.save();
-        sender.sendRichMessage("<green>Regions saved.</green>");
+        RegionMessages.send(sender, "<green>Regions saved.</green>");
     }
 }
