@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - main
-      - test
-      - Pixel-Region
-      - development
-      - refactor/central-content-pipeline-v3
   pull_request:
   workflow_dispatch:
 
@@ -73,15 +69,15 @@ jobs:
             exit 1
           fi
 
-          if ! jar tf "$artifact" | grep -q '^de/pixelrpg/rpg/libs/gson/'; then
+          if ! jar tf "$artifact" | grep -q '^de/pixelregion/libs/gson/'; then
             echo 'Relocated Gson package missing from shaded artifact.'
             exit 1
           fi
-          if ! jar tf "$artifact" | grep -q '^de/pixelrpg/rpg/libs/hikari/'; then
+          if ! jar tf "$artifact" | grep -q '^de/pixelregion/libs/hikari/'; then
             echo 'Relocated Hikari package missing from shaded artifact.'
             exit 1
           fi
-          if ! jar tf "$artifact" | grep -q '^de/pixelrpg/rpg/libs/mysql/'; then
+          if ! jar tf "$artifact" | grep -q '^de/pixelregion/libs/mysql/'; then
             echo 'Relocated MySQL package missing from shaded artifact.'
             exit 1
           fi
