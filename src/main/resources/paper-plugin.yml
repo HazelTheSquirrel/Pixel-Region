@@ -3,3 +3,55 @@ version: '1.0.0'
 main: de.pixelregion.PixelRegionPlugin
 description: Standalone polygon-based region protection for Paper 26.2.
 api-version: '26.2'
+
+permissions:
+  pixelregion.command:
+    description: Allows access to the Pixel-Region command root.
+    default: op
+    children:
+      pixelregion.command.create: true
+      pixelregion.command.list: true
+      pixelregion.command.info: true
+      pixelregion.command.edit: true
+      pixelregion.command.delete: true
+      pixelregion.command.flag: true
+      pixelregion.command.member: true
+      pixelregion.command.reload: true
+      pixelregion.command.save: true
+      pixelregion.command.debug: true
+  pixelregion.command.create:
+    description: Allows region creation and polygon editing sessions.
+    default: false
+  pixelregion.command.list:
+    description: Allows listing regions.
+    default: false
+  pixelregion.command.info:
+    description: Allows inspecting region information.
+    default: false
+  pixelregion.command.edit:
+    description: Allows editing existing regions.
+    default: false
+  pixelregion.command.delete:
+    description: Allows deleting owned regions.
+    default: false
+  pixelregion.command.flag:
+    description: Allows changing region flags.
+    default: false
+  pixelregion.command.member:
+    description: Allows changing region members.
+    default: false
+  pixelregion.command.reload:
+    description: Allows reloading region storage.
+    default: false
+  pixelregion.command.save:
+    description: Allows saving region storage.
+    default: false
+  pixelregion.command.debug:
+    description: Allows region policy diagnostics.
+    default: op
+  pixelregion.admin:
+    description: Allows administrative control over all regions.
+    default: op
+  pixelregion.bypass:
+    description: Bypasses Pixel-Region protection policies.
+    default: op
