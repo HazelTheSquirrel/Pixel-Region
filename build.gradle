@@ -1,0 +1,126 @@
+plugins {
+    id 'java'
+    id 'io.papermc.paperweight.userdev' version '2.0.0-beta.21'
+    id 'com.gradleup.shadow' version '9.6.1'
+}
+
+group = 'de.pixelrpg'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "papermc"
+        url = "https://repo.papermc.io/repository/maven-public/"
+    }
+}
+
+dependencies {
+    paperweight.paperDevBundle("26.2.build.121-stable")
+
+    implementation 'com.google.code.gson:gson:2.13.1'
+    implementation 'com.zaxxer:HikariCP:7.0.2'
+    implementation 'com.mysql:mysql-connector-j:9.7.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(25)
+    options.compilerArgs.addAll(['-Xlint:all'])
+}
+
+tasks.register('verifyPixelRpgSourceBoundaries') {
+    group = 'verification'
+    description = 'Rejects legacy Bukkit/NMS APIs and static live-server references.'
+    doLast {
+        def sourceRoot = file('src/main/java')
+        def forbidden = [
+                ~/org\.bukkit\.ChatColor/,
+                ~/net\.md_5\.bungee\.api\.ChatColor/,
+                ~/net\.minecraft\.server\.v[0-9_]+/,
+                ~/org\.bukkit\.craftbukkit/,
+                ~/static\s+(?:final\s+)?(?:Player|Entity|World)\s+\w+\s*(?:=|;)/,
+                ~/static\s+(?:final\s+)?[\w<>?, .]+\s+\w*(?:Player|Entity|World)\w*\s*(?:=|;)/
+        ]
+        fileTree(sourceRoot).matching { include '**/*.java' }.each { sourceFile ->
+            def text = sourceFile.getText('UTF-8')
+            forbidden.each { pattern ->
+                if (pattern.matcher(text).find()) {
+                    throw new GradleException("Forbidden API boundary in ${sourceFile}: ${pattern}")
+                }
+            }
+        }
+    }
+}
+
+tasks.shadowJar {
+    archiveFileName = "Pixel-Region.jar"
+    relocate 'com.google.gson', 'de.pixelrpg.rpg.libs.gson'
+    relocate 'com.zaxxer.hikari', 'de.pixelrpg.rpg.libs.hikari'
+    relocate 'com.mysql', 'de.pixelrpg.rpg.libs.mysql'
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    mergeServiceFiles()
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+
+tasks.register('verifyPixelRpgShadedDependencies') {
+    group = 'verification'
+    description = 'Verifies that bundled third-party runtime classes are actually relocated.'
+    dependsOn tasks.named('shadowJar')
+    doLast {
+        def jarFile = tasks.shadowJar.archiveFile.get().asFile
+        if (!jarFile.isFile()) throw new GradleException("Shadow JAR not found: ${jarFile}")
+
+        def forbiddenPrefixes = [
+                'com/google/gson/',
+                'com/zaxxer/hikari/',
+                'com/mysql/'
+        ]
+
+        def classEntries = zipTree(jarFile).matching { include '**/*.class' }.files
+        classEntries.each { entry ->
+            def normalized = entry.path.replace('\\', '/')
+            if (forbiddenPrefixes.any { prefix -> normalized.contains("/${prefix}") || normalized.startsWith(prefix) }) {
+                throw new GradleException("Unrelocated third-party class in shadow JAR: ${normalized}")
+            }
+        }
+
+        def serviceEntries = zipTree(jarFile).matching { include 'META-INF/services/java.sql.Driver' }.files
+        if (serviceEntries.size() != 1) {
+            throw new GradleException("Expected exactly one merged JDBC driver service descriptor, found ${serviceEntries.size()}")
+        }
+
+        def serviceFile = serviceEntries.iterator().next()
+        def serviceText = serviceFile.getText('UTF-8').readLines()
+                .collect { it.trim() }
+                .findAll { !it.isEmpty() && !it.startsWith('#') }
+        if (serviceText.isEmpty()) {
+            throw new GradleException('Merged JDBC driver service descriptor is empty')
+        }
+        if (serviceText.any { it == 'com.mysql.cj.jdbc.Driver' }) {
+            throw new GradleException('JDBC service descriptor still exposes the pre-relocation MySQL driver class')
+        }
+        if (!serviceText.any { it == 'de.pixelrpg.rpg.libs.mysql.cj.jdbc.Driver' }) {
+            throw new GradleException('Relocated MySQL JDBC driver is missing from META-INF/services/java.sql.Driver')
+        }
+    }
+}
+
+tasks.check {
+    dependsOn tasks.named('verifyPixelRpgSourceBoundaries')
+    dependsOn tasks.named('verifyPixelRpgShadedDependencies')
+}
+
+tasks.jar {
+    archiveClassifier.set('slim')
+}
+
+tasks.build {
+    dependsOn tasks.shadowJar
+}
