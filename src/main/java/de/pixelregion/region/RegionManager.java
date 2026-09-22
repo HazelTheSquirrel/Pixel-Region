@@ -102,7 +102,8 @@ public final class RegionManager {
     public void replace(Region region) {
         RegionValidator.validate(region);
         final Region old = regions.get(region.id());
-        if (old != null && !old.name().equalsIgnoreCase(region.name()) && byName(region.name()).isPresent()) {
+        final Region duplicate = byName(region.name()).orElse(null);
+        if (duplicate != null && !duplicate.id().equals(region.id())) {
             throw new IllegalArgumentException("A region with that name already exists.");
         }
         regions.put(region.id(), region);
@@ -162,7 +163,13 @@ public final class RegionManager {
     }
 
     private void register(Region region) {
-        regions.put(region.id(), region);
+        final Region duplicate = byName(region.name()).orElse(null);
+        if (duplicate != null && !duplicate.id().equals(region.id())) {
+            throw new IllegalArgumentException("Duplicate region name: " + region.name());
+        }
+        if (regions.putIfAbsent(region.id(), region) != null) {
+            throw new IllegalArgumentException("Duplicate region id: " + region.id());
+        }
         addToIndex(region);
     }
 
