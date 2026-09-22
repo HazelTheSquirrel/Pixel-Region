@@ -22,7 +22,7 @@ public final class RegionBlockListener implements Listener {
     public void onBlockBreak(final BlockBreakEvent event) {
         if (!manager.allows(event.getBlock().getLocation(), RegionFlag.BUILD, event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
-            RegionMessages.send(event.getPlayer(), "<red>You cannot break blocks in this region.</red>");
+            RegionMessages.send(event.getPlayer(), "You cannot break blocks in this region.");
         }
     }
 
@@ -31,7 +31,7 @@ public final class RegionBlockListener implements Listener {
     public void onBlockPlace(final BlockPlaceEvent event) {
         if (!manager.allows(event.getBlock().getLocation(), RegionFlag.BUILD, event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
-            RegionMessages.send(event.getPlayer(), "<red>You cannot place blocks in this region.</red>");
+            RegionMessages.send(event.getPlayer(), "You cannot place blocks in this region.");
         }
     }
 
@@ -43,7 +43,7 @@ public final class RegionBlockListener implements Listener {
         }
         if (!manager.allows(event.getClickedBlock().getLocation(), RegionFlag.USE, event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
-            RegionMessages.send(event.getPlayer(), "<red>You cannot use that here.</red>");
+            RegionMessages.send(event.getPlayer(), "You cannot use that here.");
         }
     }
 }
