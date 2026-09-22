@@ -1,268 +1,228 @@
-# Pixel-Region — Audit & verbindlicher Buildplan
+# Pixel-Region — Release Audit & Abnahme
 
-## Zweck
+## 1. Zweck und Freigabestatus
 
-Dieses Dokument ist die verbindliche technische Arbeitsgrundlage für Pixel-Region.
+Dieses Dokument ist die verbindliche technische Abnahme für **Pixel-Region**.
 
-Pixel-Region ist ein eigenständiges polygonbasiertes Regionsystem für Paper 26.2. PixelRPG wurde ausschließlich als Architekturvorlage geprüft; es besteht keine Laufzeit-, Build- oder Code-Abhängigkeit.
+Pixel-Region ist ein eigenständiges polygonbasiertes Regionsystem für **Paper 26.2**. PixelRPG wurde ausschließlich als Architekturvergleich verwendet; es besteht **keine Laufzeit-, Build- oder Code-Abhängigkeit**.
 
-Statusregeln:
+### Freigabestatus
+
+**🟢 RELEASE CANDIDATE — FREIGEGEBEN**
+
+Nach Prüfung des aktuellen Repository-Stands auf `main`, der Implementierung, Tests, Build-/Verifikationslogik, Dokumentation und des zuletzt erfolgreichen CI-Laufs bestehen **keine offenen Muss-Punkte innerhalb des definierten Zielumfangs**.
+
+Das System kann als **fertige Basisversion veröffentlicht und anschließend funktional erweitert** werden.
+
+### Statusregeln
+
 - [ ] offen
 - [-] in Arbeit
-- [x] implementiert und erfolgreich verifiziert
+- [x] implementiert und verifiziert
 - [~] bewusst nicht Bestandteil des Zielumfangs
-- Ein Punkt darf erst mit [x] markiert werden, wenn Implementierung und relevanter Build-/Test-/Funktionsnachweis erfolgreich sind.
 
-## 1. Verbindliche Plattform
+Ein Punkt darf nur mit [x] markiert werden, wenn Implementierung und relevanter Verifikationsnachweis vorhanden sind.
+
+---
+
+## 2. Verbindliche Plattform
 
 - [x] Paper 26.2
-- [x] Dev Bundle 26.2.build.121-stable
+- [x] Dev Bundle `26.2.build.121-stable`
 - [x] Java 25
 - [x] Mojang-Mappings
-- [x] paper-plugin.yml
+- [x] `paper-plugin.yml`
 - [x] aktuelle Paper-26.x-APIs
-- [x] Adventure Components
-- [x] Gradle + ShadowJar
-- [x] Repository HazelTheSquirrel/Pixel-Region
-- [x] Zielbranch main
+- [x] Adventure Components / MiniMessage
+- [x] Gradle 9.2.0
+- [x] Shadow 9.6.1
+- [x] Repository `HazelTheSquirrel/Pixel-Region`
+- [x] Release-Zielbranch `main`
 
-## 2. Initiales Audit
+---
+
+## 3. Abgenommener Funktionsumfang
 
 ### Core
 
-- [x] Paper-Plugin-Grundstruktur
-- [x] X/Z-Polygon-Geometrie
-- [x] Polygonvalidierung
-- [x] Prüfung auf doppelte benachbarte Punkte
-- [x] Nullflächenprüfung
-- [x] Selbstüberschneidungsprüfung
-- [x] Bounding Box
+- [x] Plugin-Grundstruktur
+- [x] polygonbasierte X/Z-Geometrie
 - [x] World UUID
 - [x] Min-Y / Max-Y
 - [x] Priority
 - [x] Owner
 - [x] Members
 - [x] Region Flags
-- [x] JSON-Persistenz
-- [x] Region-Suche
-- [x] Priority-basierte Flag-Auflösung
-- [x] Block Break / Place
-- [x] Interact
-- [x] PvP
-- [x] Mob-/Entity-Damage
-- [x] Explosion
-- [x] Fluid
-- [x] Fire
-- [x] Mob Spawn
-- [x] Container Use
-- [x] Entry/Exit
-- [x] Editor-Session
-- [x] Edit bestehender Regionen
-- [x] Adventure Components / MiniMessage
-- [x] aktuelle Paper BasicCommand API
-- [x] Build- und Shadow-Verifikation
+- [x] Bounding Box
+- [x] gecachte RegionGeometry
+- [x] zentrale RegionValidator-Validierung
+- [x] case-insensitive Regionsnamen
+- [x] doppelte benachbarte Punkte werden abgelehnt
+- [x] Nullflächen werden abgelehnt
+- [x] Selbstüberschneidungen werden abgelehnt
+- [x] nicht-finite Koordinaten werden abgelehnt
 
-### Architektur
+### Query / Policy
 
-- [x] RegionGeometry wird pro Region gecacht und nicht pro Query neu erzeugt.
-- [x] RegionPolicyService trennt Policy-Auswertung von Regiondaten.
-- [x] RegionManager.applicableRegions(...) liefert die vollständige priorisierte Regionsmenge.
-- [x] Owner/Member-Entscheidungen liegen zentral im RegionPolicyService.
-- [x] Query arbeitet über World+Chunk-Spatial-Index und prüft danach Y, Bounds und Polygon.
-- [x] World+Chunk-Index wird bei Load/Add/Remove/Replace korrekt aktualisiert.
-- [x] Movement/Transition vergleicht vollständige Region-Mengen statt nur der Top-Region.
-- [x] ENTRY/EXIT werden für konkrete Übergangsmengen ausgewertet.
-- [x] Teleports laufen über die gemeinsame aktuelle PlayerMoveEvent-Kette.
-- [x] Config-Defaults werden als zentrale Fallback-Policy geladen.
-- [x] Config-Messages werden über RegionMessages zentral verwendet.
-- [x] RegionStorage / JsonRegionStorage abstrahieren Persistenz.
-- [x] Dirty-State und persistente Mutationen sind implementiert.
-- [x] Backup, temporäre Datei und atomarer Replace-Fallback sind implementiert.
-
-## 3. Zielumfang
-
-### Muss
-
-- [x] Polygonregionen
-- [x] Weltbindung
-- [x] vertikaler Bereich
+- [x] World-Filter
+- [x] Y-Filter
+- [x] Bounding-Box-Filter
+- [x] Polygon-Filter
 - [x] Overlapping Regions
-- [x] Priority
-- [x] Flags
-- [x] Owner und Members
-- [x] zentrale Policy-Auswertung
-- [x] Schutz der wichtigsten Vanilla-Interaktionen
+- [x] Priority-basierte Auswertung
+- [x] Flag-Fallthrough bei unset
+- [x] konfigurierte Defaults
+- [x] zentrale Owner-/Member-Auswertung
+- [x] globaler `pixelregion.bypass`
+- [x] vollständige Applicable-Region-Menge statt nur Top-Region
+
+### Protection
+
+- [x] BUILD
+- [x] USE
+- [x] CONTAINER_USE
+- [x] PVP
+- [x] MOB_DAMAGE
+- [x] ENTITY_DAMAGE
+- [x] EXPLOSION
+- [x] FIRE_SPREAD
+- [x] FLUID_FLOW
+- [x] MOB_SPAWN
+- [x] ENTRY
+- [x] EXIT
+
+Abgedeckte aktuelle Paper-Events umfassen Block Break/Place, Interaktion, Container Opening, Combat/Damage, Explosionen, Fluids, Fire-Ignition/Spread, Mob Spawn und Movement/Teleport.
+
+### Movement
+
 - [x] Entry/Exit
-- [x] JSON Storage
-- [x] Region bearbeiten
-- [x] robuste Polygonvalidierung
-- [x] performante Queries
-- [x] saubere Commands
-- [x] Konfiguration
-- [x] Tests
-- [x] sichere Persistenz
-- [x] reproduzierbarer Build und CI
+- [x] outside → inside
+- [x] inside → outside
+- [x] Region A → Region B
+- [x] Overlap-Übergänge
+- [x] Y-Grenzen
+- [x] World-Wechsel
+- [x] Teleports über die aktuelle Paper-Bewegungskette
+- [x] keine falschen Transitionen bei unveränderter Regionsmenge
 
-### Bewusst kein Ziel
+### Editor / Commands
 
-- [~] vollständiger WorldGuard-Klon
-- [~] Webinterface
-- [~] Economy-/Claim-System
-- [~] unnötige NMS-Nutzung
-- [~] riesige Flag-Sammlung ohne konkreten Bedarf
-- [~] künstliche Framework-Komplexität
-- [~] Query-Cache zusätzlich zum Chunk-Index; der aktuelle Spatial-Index ist ausreichend und wird automatisiert getestet.
-- [~] asynchrone Persistenz; Regionänderungen werden als kleine immutable/serialisierte Snapshots synchron und sicher geschrieben.
-- [~] zusätzliche Performance-Metriken ohne konkreten Diagnosebedarf.
-- [~] Editor-Visualisierung; der Kerneditor ist vollständig ohne zusätzliche Live-Rendering-Infrastruktur.
+- [x] create
+- [x] point
+- [x] finish
+- [x] cancel
+- [x] list
+- [x] info
+- [x] edit
+- [x] priority
+- [x] miny / maxy
+- [x] point add / set / remove
+- [x] flags
+- [x] members
+- [x] delete
+- [x] reload
+- [x] save
+- [x] debug
 
-## 4. Zielarchitektur
+Ungültige Änderungen ersetzen keine bestehende gültige Region.
 
-Paper Event → Protection Adapter → Region Query → Applicable Regions → Policy Evaluator → ALLOW/DENY
+---
 
-Tatsächliche Verantwortlichkeiten:
-- Region: Regiondaten, Owner/Members und explizite Flags.
-- RegionGeometry: vorbereitete Polygongeometrie und Bounds.
-- RegionValidator: zentrale Datenvalidierung.
-- RegionManager: Speicherung im Speicher, Spatial Index und Applicable-Region-Abfragen.
-- RegionQuery: unveränderlicher Query-Wert.
-- RegionPolicyService: zentrale Action-/Flag-Entscheidung.
-- RegionTransitionService: Entry/Exit/Teleport-Behandlung.
-- RegionStorage / JsonRegionStorage: Persistenz.
-- RegionMessages: konfigurierte Adventure-/MiniMessage-Ausgabe.
-- Listener: dünne Protection-Adapter, die an Policy/Transition delegieren.
+## 4. Architektur-Abnahme
 
-## 5. Verbindlicher Buildplan
+### Verantwortlichkeiten
 
-### Phase 1 — Core stabilisieren
+- **Region** — Regiondaten, Owner, Members und explizite Flags.
+- **RegionGeometry** — vorberechnete Polygongeometrie und Bounds.
+- **RegionValidator** — zentrale Validierung.
+- **RegionManager** — In-Memory-Datenhaltung, Spatial Index und Region Queries.
+- **RegionPolicyService** — zentrale Policy- und Flag-Auswertung.
+- **RegionTransitionService** — Entry/Exit und Movement-Transitions.
+- **RegionStorage / JsonRegionStorage** — Persistenz.
+- **RegionMessages** — konfigurierte Adventure-/MiniMessage-Ausgabe.
+- **Listener** — dünne Adapter ohne duplizierte Policy-Logik.
 
-- [x] Geometry Cache: RegionGeometry und Bounds wiederverwenden.
-- [x] Geometry wird bei Polygonänderungen durch validierten Region-Ersatz korrekt erneuert.
-- [x] Tests für inside/outside/boundary/invalid.
-- [x] RegionValidator einführen.
-- [x] UUID, Name, World, Y, Polygon, Priority, Flags, Owner und Members validieren.
-- [x] Name auf sinnvolles Format und case-insensitive Eindeutigkeit bringen.
+### Performance
 
-Abschluss: CI-Build und automatisierte Geometry-/Validator-/Region-Tests erfolgreich.
+- [x] World+Chunk-Spatial-Index
+- [x] Regionen werden in alle betroffenen Chunks indiziert
+- [x] Index wird bei Load/Add/Remove/Replace aktualisiert
+- [x] Kandidatenfilter vor Bounds-/Polygonprüfung
+- [x] Geometry wird wiederverwendet
+- [x] Many-Region-Test vorhanden
+- [~] zusätzlicher Query-Cache nicht erforderlich
+- [~] zusätzliche Performance-Metriken nicht erforderlich
 
-### Phase 2 — Query und Policy
+Der aktuelle Spatial Index ist die vorgesehene Performance-Basis; zusätzliche Caches würden die Komplexität erhöhen, ohne für den definierten Umfang einen belegten Mehrwert zu liefern.
 
-- [x] ApplicableRegions als zentrale Overlap-Abfrage.
-- [x] World, Y, Bounds und Polygon in der Query.
-- [x] Ergebnis nach Priority sortiert.
-- [x] RegionManager ist nicht die primäre Policy-Schicht; Listener delegieren an RegionPolicyService.
-- [x] RegionPolicyService einführen.
-- [x] höchste explizite Flag-Entscheidung gewinnt.
-- [x] unset fällt auf niedrigere Regionen.
-- [x] kein Treffer fällt auf konfigurierten Default zurück.
-- [x] Owner/Member-Regel explizit und zentral definiert.
+---
 
-Abschluss: Single-, Overlap-, Priority-, Fallback-, Owner- und Member-Tests erfolgreich.
+## 5. Persistenz / Datenintegrität
 
-### Phase 3 — Performance
+- [x] RegionStorage-Abstraktion
+- [x] JsonRegionStorage
+- [x] Schema-Version
+- [x] Legacy-Array-Format lesbar
+- [x] zukünftige unbekannte Schema-Versionen werden abgelehnt
+- [x] temporäre Datei
+- [x] Backup-Datei
+- [x] atomarer Replace, wenn unterstützt
+- [x] sicherer Replace-Fallback
+- [x] Backup-Recovery bei defekter Primärdatei
+- [x] Dirty-State
+- [x] Save nach relevanten Mutationen
+- [x] Save bei Shutdown
+- [~] asynchrones I/O nicht erforderlich
 
-- [x] Spatial-/Chunk-Index nach World + Chunk.
-- [x] Add, Remove, Edit und Reload aktualisieren den Index.
-- [x] Regionen über Chunkgrenzen korrekt behandeln.
-- [x] erst Kandidaten, dann Bounds, dann Polygon prüfen.
-- [~] Query-Cache nicht zusätzlich erforderlich; der Chunk-Index reduziert die Kandidatenmenge bereits.
-- [x] relevante Indexänderungen werden bei Mutation/Reload durchgeführt.
+Das Storage-System priorisiert Datenintegrität und verhindert, dass unbekannte zukünftige Formate stillschweigend überschrieben werden.
 
-Abschluss: korrekte Query-Ergebnisse und Many-Region-Test erfolgreich.
+---
 
-### Phase 4 — Protection
+## 6. Permissions
 
-- [x] Alle Listener delegieren an Query/Policy.
-- [x] keine duplizierte Priority-/Member-Logik in Listenern.
-- [x] MOB_SPAWN implementiert.
-- [x] CONTAINER_USE implementiert.
-- [x] Fire-Ignition und Fire-Spread werden durch getrennte aktuelle Paper-26.2-Events geprüft und gemeinsam über FIRE_SPREAD policy-gesteuert.
-- [x] Explosion-Semantik ist dokumentiert: betroffene Blockliste wird gegen EXPLOSION gefiltert.
-- [x] Protection-Flags sind zentral konfigurierbar.
+Im Plugin-Descriptor und Command-Code konsistent vorhanden:
 
-Abschluss: Build, API-Verifikation und automatisierte Policy-Tests erfolgreich.
+- [x] `pixelregion.command`
+- [x] `pixelregion.command.create`
+- [x] `pixelregion.command.list`
+- [x] `pixelregion.command.info`
+- [x] `pixelregion.command.edit`
+- [x] `pixelregion.command.delete`
+- [x] `pixelregion.command.flag`
+- [x] `pixelregion.command.member`
+- [x] `pixelregion.command.reload`
+- [x] `pixelregion.command.save`
+- [x] `pixelregion.command.debug`
+- [x] `pixelregion.admin`
+- [x] `pixelregion.bypass`
 
-### Phase 5 — Movement
+Root-Command ist operator-default. Eigentümerprüfung bleibt für normale Regionsmutationen aktiv; `pixelregion.admin` erlaubt administrative Kontrolle.
 
-- [x] RegionTransitionService.
-- [x] entered/exited/retained aus vollständigen Regionsmengen berechnen.
-- [x] ENTRY/EXIT nicht nur über Top-Region bestimmen.
-- [x] normale Teleports werden über PlayerMoveEvent/PlayerTeleportEvent berücksichtigt.
-- [x] World-Wechsel werden durch World UUID in der Query berücksichtigt.
-- [x] gleiche Region vor/nach Bewegung erzeugt keinen falschen Transition-Event.
-- [x] Transition-Set-Berechnung ist automatisiert getestet.
+---
 
-Abschluss: Transition-, Overlap- und Boundary-Tests erfolgreich.
+## 7. Diagnostics / Betrieb
 
-### Phase 6 — Editor
+- [x] `/pixelregion debug`
+- [x] aktuelle Location
+- [x] passende Regionen
+- [x] Priority
+- [x] expliziter Flag-Zustand
+- [x] Owner-/Member-Kontext
+- [x] finale Policy-Entscheidung
+- [x] konfigurierbare Denied-/Entry-/Exit-Messages
+- [x] Regionname wird als unparsed User-Data in MiniMessage eingesetzt
 
-- [x] bestehendes create/point/finish/cancel erhalten.
-- [x] edit bestehender Regionen.
-- [x] Punkte hinzufügen, entfernen und ändern.
-- [x] Änderungen werden erst nach erfolgreicher Validierung übernommen.
-- [x] Priority bearbeiten.
-- [x] Min-Y/Max-Y bearbeiten.
-- [x] Flags bearbeiten.
-- [x] Members bearbeiten.
-- [~] Visualisierung nicht Bestandteil des Zielumfangs.
-- [x] aktuelle Paper-26.2-Dialog-API wurde geprüft; für den aktuellen vollständigen Command-Editor ist keine zusätzliche Dialog-Implementierung erforderlich.
+Das System besitzt damit ausreichend Diagnosemöglichkeiten, um Overlap-, Priority- und Policy-Probleme ohne Quellcodeänderung zu untersuchen.
 
-Abschluss: vollständiger Create/Edit-Flow ist implementiert; Mutationen werden sofort persistiert.
+---
 
-### Phase 7 — Storage
+## 8. Tests
 
-- [x] RegionStorage-Abstraktion.
-- [x] JsonRegionStorage als konkrete Implementierung.
-- [x] schemaVersion im Dateiformat.
-- [x] unbekannte zukünftige Versionen werden abgelehnt und nicht überschrieben.
-- [x] Backup-Datei.
-- [x] sichere temporäre Speicherung und Replace-Strategie.
-- [x] Dirty-State.
-- [x] Save bei wichtigen Mutationen und Shutdown.
-- [~] Async I/O nicht erforderlich; kleine serialisierte Region-Snapshots werden sicher synchron gespeichert.
-- [x] Legacy-Array-Format bleibt lesbar.
-- [x] Backup-Recovery bei defekter Primärdatei.
-- [x] Storage-Tests für Save/Load/Legacy/Backup/Future-Schema.
+### Geometry
 
-Abschluss: automatisierte Storage-Tests und CI-Build erfolgreich.
-
-### Phase 8 — Permissions
-
-- [x] pixelregion.command
-- [x] pixelregion.command.create
-- [x] pixelregion.command.list
-- [x] pixelregion.command.info
-- [x] pixelregion.command.edit
-- [x] pixelregion.command.delete
-- [x] pixelregion.command.flag
-- [x] pixelregion.command.member
-- [x] pixelregion.command.reload
-- [x] pixelregion.command.save
-- [x] pixelregion.command.debug
-- [x] pixelregion.admin
-- [x] pixelregion.bypass
-
-Abschluss: Permission-Katalog und Checks sind im Paper-Plugin-Descriptor und Command-Code konsistent.
-
-### Phase 9 — Diagnostics
-
-- [x] /pixelregion debug.
-- [x] Location anzeigen.
-- [x] passende Regionen anzeigen.
-- [x] Priority anzeigen.
-- [x] explizites Flag anzeigen.
-- [x] Owner/Member-Kontext anzeigen.
-- [x] finale Policy anzeigen.
-- [~] Performance-Metriken nur bei echtem Bedarf.
-
-Abschluss: Overlap-/Policy-Fälle sind ohne Codeänderung diagnostizierbar.
-
-### Phase 10 — Tests
-
-Geometry:
 - [x] Dreieck
 - [x] Rechteck
-- [x] konkav
+- [x] konkave Polygone
 - [x] innen
 - [x] außen
 - [x] Kante
@@ -271,7 +231,8 @@ Geometry:
 - [x] Nullfläche
 - [x] Selbstüberschneidung
 
-Region/Policy:
+### Region / Policy
+
 - [x] World
 - [x] Y
 - [x] Priority
@@ -279,138 +240,165 @@ Region/Policy:
 - [x] Member
 - [x] Flags
 - [x] Overlap
-- [x] Fallback
+- [x] Fallthrough
 - [x] Default
 - [x] Bypass
 
-Transition:
+### Transition
+
 - [x] außerhalb → innerhalb
 - [x] innerhalb → außerhalb
 - [x] Region A → Region B
 - [x] Overlap
 - [x] Y-/Boundary-Verhalten
-- [x] World-Wechsel über World UUID
+- [x] World-Wechsel
 - [x] Teleport-Transition-Kette
 
-Storage:
+### Storage
+
 - [x] Save/Load
 - [x] Legacy-Format
 - [x] Backup
 - [x] Future-Schema-Rejection
 
-Performance:
+### Performance
+
 - [x] 1000-Region-Spatial-Index-Test
+- [x] Chunk-Boundary-Verhalten
 
-Abschluss: automatisierte Tests erfolgreich.
+---
 
-### Phase 11 — Build und Repository
+## 9. Build- und CI-Abnahme
 
-- [x] alte de.pixelrpg-Buildreste entfernt.
-- [x] eigener Namespace für Group und Relocation: de.pixelregion.
-- [x] Verification-Tasknamen bereinigt.
-- [x] Workflow auf main ausgerichtet.
-- [x] Java 25.
-- [x] Gradle 9.2.0 CI.
-- [x] clean check build.
-- [x] Legacy-API-Prüfungen.
-- [x] Artifact-Prüfung.
-- [x] Shadow-Relocation-Prüfung.
-- [x] nur tatsächlich benötigte Gson-Laufzeitdependency bleibt.
-- [x] ungenutzte HikariCP/MySQL-Abhängigkeiten entfernt.
-- [x] settings.gradle Projektname Pixel-Region.
-- [x] CI-Build erfolgreich verifiziert.
+### Build
 
-Verifizierter CI-Stand:
-- Commit: d63d60759338644e5e71577c888cef7cd22961b4
-- Workflow: Build
-- Result: success
+- [x] Java 25 Toolchain
+- [x] Gradle 9.2.0
+- [x] Paper Dev Bundle 26.2.build.121-stable
+- [x] `clean check build`
+- [x] JUnit Platform
+- [x] Source-Boundary-Verifikation
+- [x] ShadowJar
+- [x] Gson-Relocation
+- [x] Plugin-Artefakt-Verifikation
+- [x] Slim-JAR wird separat erzeugt
 
-### Phase 12 — Dokumentation
+### API-Boundaries
 
-- [x] README auf finalen Funktionsstand gebracht.
-- [x] Installation / Build.
-- [x] Commands.
-- [x] Permissions.
-- [x] Flags.
-- [x] Priority und Overlap.
-- [x] Storage.
-- [x] Config.
-- [x] Policy-Regeln.
-- [x] Editor.
-- [x] bekannte Einschränkungen / bewusst ausgelassene optionale Funktionen.
-- [x] Development/Build.
-- [x] README entspricht dem implementierten Stand.
+Verboten und automatisiert geprüft:
 
-## 6. Verbindliche Policy-Regeln
+- [x] `ChatColor`
+- [x] Legacy-NMS
+- [x] CraftBukkit
+- [x] statische Live-Server-Referenzen
+- [x] unrelocated Gson-Klassen im Shadow-Artefakt
 
-Eine Region passt nur bei identischer World UUID, gültigem Y-Bereich, Treffer in der Bounding Box und Treffer im Polygon.
+### Aktueller CI-Nachweis
 
-Mehrere Regionen dürfen gleichzeitig gelten.
+- Workflow: **Build**
+- Branch: **main**
+- Run: **75**
+- Run ID: `35683947468`
+- Commit: `dea3b1e63860d4c1f07c65ca3f3f1351772fed65`
+- Ergebnis: **success**
+- Verifiziert: Clean Build, Tests, Source API Boundaries und Plugin Artifact Checks
 
-Höhere Priority wird zuerst ausgewertet.
+Der Audit referenziert damit den tatsächlich neuesten erfolgreichen CI-Stand und nicht mehr den vorherigen Zwischenstand.
 
-Eine nicht gesetzte Flag-Entscheidung fällt auf die nächste passende Region zurück.
+---
 
-Wenn keine Region eine explizite Entscheidung liefert, gilt der konfigurierte Default.
+## 10. Dokumentations-Abnahme
 
-Owner/Member erhalten nur die ausdrücklich definierte Region-Berechtigung.
+- [x] README entspricht dem implementierten Funktionsumfang
+- [x] Plattform dokumentiert
+- [x] Regionmodell dokumentiert
+- [x] Policy-Regeln dokumentiert
+- [x] Flags dokumentiert
+- [x] Commands dokumentiert
+- [x] Permissions dokumentiert
+- [x] Storage dokumentiert
+- [x] Configuration dokumentiert
+- [x] Diagnostics dokumentiert
+- [x] Tests dokumentiert
+- [x] Build dokumentiert
+- [x] bewusst nicht enthaltene Funktionen dokumentiert
 
-Ein globaler Bypass ist eine separate Permission/Policy-Regel.
+---
 
-## 7. Arbeitsregeln
+## 11. Bewusst nicht Bestandteil der Release-Basis
 
-- [x] Keine unnötigen Refactorings.
-- [x] Bestehende funktionierende Funktionen erhalten.
-- [x] Keine erfundenen Paper-APIs.
-- [x] aktuelle Paper-26.2-API bei Unsicherheit geprüft.
-- [x] keine alten 1.21.x-APIs oder Workarounds.
-- [x] keine CraftBukkit-/Legacy-NMS-Abhängigkeit.
-- [x] keine statischen Live-Server-Objekte.
-- [x] Phasen wurden erst nach Verifikation als erledigt markiert.
+Die folgenden Punkte sind **keine offenen Fehler**:
 
-## 8. Projektstatus
+- [~] vollständiger WorldGuard-Klon
+- [~] Webinterface
+- [~] Economy-/Claim-System
+- [~] zusätzliche NMS-Komplexität
+- [~] große unbenötigte Flag-Sammlung
+- [~] künstliche Framework-Schichten
+- [~] zusätzlicher Query-Cache
+- [~] asynchrones Persistenzsystem
+- [~] zusätzliche Performance-Metriken
+- [~] Editor-Visualisierung
+- [~] zusätzliche Dialog-Oberfläche; der vollständige Command-Editor deckt den aktuellen Zielumfang ab
 
-### 🟢 FERTIG
+Diese Punkte können später unabhängig als Erweiterungen geplant werden.
 
-Pixel-Region erfüllt den definierten Zielumfang.
+---
 
-Build: erfolgreich  
-Tests: erfolgreich  
-CI: erfolgreich  
-Protection-Core: abgeschlossen  
-Storage: abgeschlossen  
-Editor: abgeschlossen  
-Dokumentation: abgeschlossen  
-Offene Muss-Punkte: 0
+## 12. Bekannte fachliche Semantik
 
-## 9. Fertigkriterium
+### Owner / Member
 
-- [x] alle Muss-Funktionen implementiert.
-- [x] keine bekannte kritische Protection-Lücke im definierten Zielumfang.
-- [x] Overlap/Priority automatisiert getestet.
-- [x] Geometry automatisiert getestet.
-- [x] Storage automatisiert getestet.
-- [x] Movement/Transition automatisiert getestet.
-- [x] Build erfolgreich.
-- [x] CI erfolgreich.
-- [x] Legacy-API-Verifikation erfolgreich.
-- [x] Shadow-Verifikation erfolgreich.
-- [x] README beschreibt den tatsächlichen Stand.
-- [x] offene Muss-Punkte 0.
+Owner- und Member-Zugriff ist eine **explizite Regionberechtigung** und kein globaler Bypass. Die Entscheidung wird zentral in `RegionPolicyService` getroffen.
 
-## 10. Fortschrittsprotokoll
+Bei mehreren überlappenden Regionen bleibt die definierte Policy-Reihenfolge maßgeblich. Änderungen an dieser Semantik dürfen nur bewusst als Policy-Änderung erfolgen und sind nicht als technischer Fehler des aktuellen Release-Stands zu behandeln.
 
-- PixelRPG-Referenz: Region, RegionManager, RegionPolicyService, RegionTransitionService und Repository wurden als Architekturvorlage geprüft. Nur für Pixel-Region benötigte Bestandteile wurden übernommen; Pixel-Region bleibt vollständig eigenständig.
-- Initial Audit: [x]
-- Phase 1 Core: [x]
-- Phase 2 Query/Policy: [x]
-- Phase 3 Performance: [x]
-- Phase 4 Protection: [x]
-- Phase 5 Movement: [x]
-- Phase 6 Editor: [x]
-- Phase 7 Storage: [x]
-- Phase 8 Permissions: [x]
-- Phase 9 Diagnostics: [x]
-- Phase 10 Tests: [x]
-- Phase 11 Build/Repository: [x]
-- Phase 12 Documentation: [x]
+### Explosionen
+
+Explosionen werden über die betroffenen Blocklisten gegen die `EXPLOSION`-Policy geprüft.
+
+### Fire
+
+Fire-Ignition und Fire-Spread verwenden die aktuellen Paper-26.2-Events und werden gemeinsam über `FIRE_SPREAD` policy-gesteuert.
+
+---
+
+## 13. Release-Fertigkriterium
+
+Alle folgenden Bedingungen sind erfüllt:
+
+- [x] definierter Muss-Funktionsumfang vollständig
+- [x] keine bekannte kritische Protection-Lücke innerhalb des definierten Umfangs
+- [x] Geometry automatisiert getestet
+- [x] Overlap/Priority automatisiert getestet
+- [x] Owner/Member automatisiert getestet
+- [x] Movement/Transition automatisiert getestet
+- [x] Storage automatisiert getestet
+- [x] Spatial Index automatisiert getestet
+- [x] Build erfolgreich
+- [x] CI erfolgreich
+- [x] Legacy-API-Verifikation erfolgreich
+- [x] Shadow-Verifikation erfolgreich
+- [x] Plugin-Artefakt verifiziert
+- [x] README entspricht dem Code
+- [x] Audit entspricht dem aktuellen CI-Stand
+- [x] keine offenen Muss-Punkte
+
+---
+
+## 14. Schlussabnahme
+
+### 🟢 VERÖFFENTLICHUNGSFÄHIG
+
+**Pixel-Region kann auf Basis des aktuell geprüften Repository-Stands als fertige Release-Basis veröffentlicht werden.**
+
+Der definierte Core ist abgeschlossen. Die Architektur ist für weitere Features vorbereitet, ohne dass dafür die bestehende Protection-, Query-, Storage- oder Editor-Basis neu aufgebaut werden muss.
+
+**Release-Basis:** `main`  
+**Letzter verifizierter Commit:** `dea3b1e63860d4c1f07c65ca3f3f1351772fed65`  
+**CI:** erfolgreich  
+**Tests:** erfolgreich  
+**Build:** erfolgreich  
+**Offene Muss-Punkte:** **0**
+
+Ab diesem Punkt sind neue Funktionen als Erweiterungen auf einer abgenommenen Basis zu behandeln und nicht als notwendige Fertigstellung des aktuellen Core-Systems.
