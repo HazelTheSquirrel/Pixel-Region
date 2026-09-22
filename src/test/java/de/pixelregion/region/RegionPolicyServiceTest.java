@@ -50,7 +50,7 @@ class RegionPolicyServiceTest {
         final RegionQuery query = new RegionQuery(WORLD, 1, 0, 1);
 
         assertTrue(policy.allows(query, RegionFlag.BUILD, OWNER));
-        assertTrue(policy.allows(query, RegionFlag.BUILD, MEMBER));
+        assertFalse(policy.allows(query, RegionFlag.BUILD, MEMBER));
         assertFalse(policy.allows(query, RegionFlag.BUILD, OTHER));
 
         final Region withMember = region("member", WORLD, -10, 20, 0, Map.of(RegionFlag.BUILD, FlagState.DENY),
