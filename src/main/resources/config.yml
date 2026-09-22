@@ -4,11 +4,16 @@ storage:
 protection:
   default-build: allow
   default-use: allow
+  default-container-use: allow
   default-pvp: allow
   default-mob-damage: allow
+  default-entity-damage: allow
   default-explosion: allow
   default-fire-spread: allow
   default-fluid-flow: allow
+  default-mob-spawn: allow
+  default-entry: allow
+  default-exit: allow
 
 messages:
   denied: "<red>You are not allowed to do that here."
