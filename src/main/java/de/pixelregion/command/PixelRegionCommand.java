@@ -5,6 +5,7 @@ import de.pixelregion.region.FlagState;
 import de.pixelregion.region.Region;
 import de.pixelregion.region.RegionFlag;
 import de.pixelregion.region.RegionManager;
+import de.pixelregion.region.RegionPolicyService;
 import de.pixelregion.region.RegionPoint;
 import de.pixelregion.region.RegionSession;
 import de.pixelregion.region.RegionSessionManager;
@@ -27,17 +28,20 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
     private final JavaPlugin plugin;
     private final RegionManager manager;
     private final RegionSessionManager sessions;
+    private final RegionPolicyService policy;
     private final RegionMessages messages;
 
     public PixelRegionCommand(
             JavaPlugin plugin,
             RegionManager manager,
             RegionSessionManager sessions,
+            RegionPolicyService policy,
             RegionMessages messages
     ) {
         this.plugin = plugin;
         this.manager = manager;
         this.sessions = sessions;
+        this.policy = policy;
         this.messages = messages;
     }
 
@@ -501,7 +505,7 @@ public final class PixelRegionCommand implements io.papermc.paper.command.brigad
                     + " member=" + region.hasAccess(player.getUniqueId()));
         }
 
-        final boolean allowed = manager.allows(player.getLocation(), flag, player.getUniqueId(),
+        final boolean allowed = policy.allows(player.getLocation(), flag, player.getUniqueId(),
                 player.hasPermission("pixelregion.bypass"));
         messages.send(sender, "Final policy: " + (allowed ? "ALLOW" : "DENY"));
     }
