@@ -17,7 +17,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Locale;
 import java.util.UUID;
 
-public final class PixelRegionCommand implements org.bukkit.command.BasicCommand {
+public final class PixelRegionCommand implements io.papermc.paper.command.brigadier.BasicCommand {
 
     private final JavaPlugin plugin;
     private final RegionManager manager;
