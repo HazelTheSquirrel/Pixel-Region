@@ -10,7 +10,6 @@ import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 
 public final class RegionEnvironmentListener implements Listener {
@@ -43,7 +42,7 @@ public final class RegionEnvironmentListener implements Listener {
     // Prevents player and environmental ignition when FIRE_SPREAD is denied.
     @EventHandler(ignoreCancelled = true)
     public void onIgnite(BlockIgniteEvent event) {
-        if (!policy.allows(event.getBlock().getLocation(), RegionFlag.FIRE_SPREAD, null)) {
+        if (!policy.allows(event.getNewState().getLocation(), RegionFlag.FIRE_SPREAD, null)) {
             event.setCancelled(true);
         }
     }
